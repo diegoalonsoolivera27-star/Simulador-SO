@@ -26,6 +26,7 @@ string pts(const Proceso& p){
 }
 
 void imprimirCola(const deque<Proceso>& cola){
+    cout << "\n\n" << "Cola de Listos: " << endl;
     for(const Proceso& p : cola)
         cout << pts(p) << "\n";
 }
@@ -39,7 +40,28 @@ int main(){
         while((int)colaListos.size() < MAX_COLA)
             colaListos.push_back(generarProceso(c));
         
+        cout << "Ciclo " << ciclo << endl;
+        Proceso p = colaListos.front();
+        colaListos.pop_front();
+        if(p.primerTurno == -1) 
+            p.primerTurno = reloj;
+        cout << "Atendiendo proceso " << pts(p) << endl;
+
+        int usado = min(c.cuantoSistema, p.cuanto);
+        p.cuanto -= usado;
+        reloj += usado;
+
+        if (p.cuanto == 0){
+            p.fin = reloj;
+            cout << "Proceso " << p.id << " terminó" << endl;
+        } else{
+            colaListos.push_back(p);
+        }
         
+        cout << "Fin de ciclo (t= " << reloj << ")";
+        imprimirCola(colaListos);
+        cout << endl;
+        this_thread::sleep_for(chrono::milliseconds(c.velocidadMS));
     }
 }
 
