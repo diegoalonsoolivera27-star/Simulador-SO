@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <limits>
+#include <string>
 using namespace std;
 
 const int SPLIT_MIN = 32; // KB, tamaño mínimo de split
@@ -20,6 +21,12 @@ struct config{
     int cuantoMaxPro; // tiempo máximo de CPU que puede tener
     int cuantoSistema;
     int velocidadMS; // pausa entre cada tick del reloj
+};
+
+struct Estadisticas {
+    int atendidos = 0;       // cuantos procesos terminaron
+    long sumaRetorno = 0;    // tiempo total de cada proceso en el sistema
+    long sumaRespuesta = 0;  // espera hasta su primer turno
 };
 
 inline int pedirEntero(int min, int max, bool mostrarRango){
@@ -60,4 +67,8 @@ inline config leerConfig(){
     c.velocidadMS = pedirEntero(1, 5000, true);
 
     return c;
+}
+
+string pts(const Proceso& p){ //convierte el proceso a la cadena de tecto "proceso to string"
+    return "[" + to_string(p.id) + "," + to_string(p.tamano) + "," + to_string(p.cuanto) + "]";
 }
