@@ -10,7 +10,7 @@
 #include "Config.h"
 #include "Memoria.h"
 
-const int MAX_COLA = 5; // TEMPORAL
+const int MAX_COLA = 5; 
 atomic <bool> parar(false);   // orden de terminar; la activa el hilo del teclado
 atomic <int> velocidad(0);    // pausa entre ciclos en ms; el teclado la cambia
 int contadorId = 0;

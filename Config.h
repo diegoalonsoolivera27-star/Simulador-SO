@@ -47,7 +47,7 @@ inline int pedirEntero(int min, int max, bool mostrarRango){
 
 inline config leerConfig(){
     config c;
-    int mb;
+    int mb, opc = 0;
     do{
         cout << "Memoria en MB (1, 4, 8): ";
         mb = pedirEntero(1, 8, false);
@@ -63,9 +63,21 @@ inline config leerConfig(){
     cout << "Cuanto del sistema ";
     c.cuantoSistema = pedirEntero(1, c.cuantoMaxPro, true);
 
-    cout << "Velocidad del sistema (ms) ";
-    c.velocidadMS = pedirEntero(1, 5000, true);
-
+    cout << "Velocidad del sistema (1 - rápido / 2 - normal / 3 - lento): ";
+    do {
+        cin >> opc;
+        switch (opc){
+        case 1: c.velocidadMS = 1000;
+            break;
+        case 2: c.velocidadMS = 2000;
+            break;
+        case 3: c.velocidadMS = 3000;
+            break;
+        default:
+            cout << "Opción inválida, intente de nuevo: ";
+            break;
+        }
+    } while (opc != 1 && opc != 2 && opc != 3);
     return c;
 }
 

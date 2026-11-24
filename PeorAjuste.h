@@ -1,7 +1,5 @@
 #pragma once
-
 #include "Memoria.h"
-
 #include <algorithm>
 #include <cstddef>
 #include <sstream>
