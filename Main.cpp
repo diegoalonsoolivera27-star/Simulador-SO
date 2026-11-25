@@ -9,8 +9,9 @@
 #include <atomic> // para compartir variables entre hilos
 #include "Config.h"
 #include "Memoria.h"
+#include "PeorAjuste.h"
+#include "Buddy.h"
 
-const int MAX_COLA = 5; 
 atomic <bool> parar(false);   // orden de terminar; la activa el hilo del teclado
 atomic <int> velocidad(0);    // pausa entre ciclos en ms; el teclado la cambia
 int contadorId = 0;
@@ -26,9 +27,9 @@ Proceso generarProceso(const config& c){
 }
 
 void imprimirCola(const deque<Proceso>& cola){
-    cout << "\n\n" << "Cola de Listos: " << endl;
+    cout << "Lista RR: " << endl;
     for(const Proceso& p : cola)
-        cout << pts(p) << "\n";
+        cout << pts(p);
 }
 
 // Para leer el teclado sin detener la simulacion
@@ -43,57 +44,107 @@ void leerTeclas(){
     }
 }
 
+int menu(){
+    int opcion;        
+    cout<<"Elije el tipo de memoria que desea usar (1. Peor Ajuste / 2. Buddy System): ";
+    do {
+        cin>>opcion;
+        if (opcion != 1 && opcion != 2)
+            cout<<"Opción inválida, intenta de nuevo."<<endl;
+    } while (opcion != 1 && opcion != 2);
+    return opcion;
+}
+
 int main(){
     srand(time(NULL));
     config c = leerConfig();
+    int opcion = menu(); // el menu regresa un numero que indica la opcion de memoria que se desea usar
+    Memoria* memoria = nullptr;
+
+    if (opcion == 1) {
+        memoria = new PeorAjuste(c.memoriaTotal);
+    } else if(opcion == 2){
+        memoria = new Buddy(c.memoriaTotal);
+    } else {
+        cout<<"Opcion no valida";
+        return 0;
+    }
+
     deque<Proceso> colaListos;
     Estadisticas est;
     velocidad = c.velocidadMS;
-    int ciclo = 0;
     cout << "\ns : Terminar ejecución | + : Más rapido | - : Más lento\n" << endl;
     this_thread::sleep_for(chrono::seconds(1)); // pausa de 1 segundo para leer instrucciones
     thread teclado(leerTeclas);  // crea y arranca el hilo del teclado; corre en paralelo para no detener la ejecución del simulador
 
-    while(!parar){
-        ciclo++;
+    Proceso pendiente;
+    bool pend = false, esperando = false;
 
-        while((int)colaListos.size() < MAX_COLA)// mientras la cola no tenga más procesos que MAX_COLA
-            colaListos.push_back(generarProceso(c)); // añade a la cola un proceso aleatorio generado
+    while(!parar){
+        cout << "\n";
+        if (!pend){
+            pendiente = generarProceso(c);
+            pend = true;
+            cout << "Proceso nuevo: " << pts(pendiente) << endl;
+        }
         
-        cout << "Ciclo " << ciclo << endl;
+        if(memoria->asignar(pendiente)){
+            if(esperando){  // solo avisa si venía de esperar
+                cout << "Proceso " << pts(pendiente) << " asignado a memoria" << endl;
+                esperando = false;
+            }
+            colaListos.push_back(pendiente);
+            pend = false;
+        } else{
+            cout << "Proceso " << pts(pendiente) << " en espera de memoria" << endl;
+            esperando = true;
+        }
+        
+        if(colaListos.empty()){ // Si no hay nada que atender, espera hasta generar un proceso en sig. ciclo
+            this_thread::sleep_for(chrono::milliseconds(velocidad));
+            continue;
+        
+        }
+        
+        cout << memoria->estado() << endl;
         Proceso p = colaListos.front();
         colaListos.pop_front();
         if(p.primerTurno == -1) // si nunca se ha atendido
             p.primerTurno = reloj; // guarda cuando recibe el CPU por primera vez
-        cout << "Atendiendo proceso " << pts(p) << endl;
+        cout << "Atendiendo proceso: " << pts(p) << endl;
 
         int usado = min(c.cuantoSistema, p.cuanto); // corre un cuanto completo, o menos si ya no requiere más
         p.cuanto -= usado; // remueve el tiempo usado
         reloj += usado; // lo aumenta en la estadística
+        memoria->actualizarCuanto(p.id, p.cuanto); // actualiza el cuanto en la memoria
 
         if (p.cuanto == 0){ // si terminó, se imprime el mensaje
             p.fin = reloj;
-            cout << "Proceso " << p.id << " terminó" << endl;
+            memoria->liberar(p.id);//liberar memoria del proceso
+            cout << "Proceso " << p.id << " terminado"  << endl;
             est.atendidos++;
-            est.sumaRespuesta += (p.fin - p.llegada);
-            est.sumaRetorno += (p.primerTurno - p.llegada);
+            est.sumaRespuesta += (p.primerTurno - p.llegada);
+            est.sumaRetorno += (p.fin - p.llegada);
         } else{ // si no, se manda a la cola de listos
             colaListos.push_back(p);
         }
         
-        cout << "Fin de ciclo (t= " << reloj << ")"; // muestra el reloj al terminar el ciclo
         imprimirCola(colaListos);
+        cout << "\nEstado de la memoria:" << endl;
+        cout << memoria->estado() << endl;
+        cout << "Memoria libre: " << memoria->libreTotal() << " KB\n" << endl;
         cout << endl;
         this_thread::sleep_for(chrono::milliseconds(velocidad)); // usa el valor actual que puede modificarse
     }
     teclado.join();// espera a que el hilo del teclado termine antes de cerrar el programa
-    cout << "Simulación terminada" << endl;
-    cout << "\nEstadísticas" << endl;
+    cout << "\nSimulación terminada" << endl;
+    /*cout << "\nEstadísticas" << endl;
     cout << "Procesos atendidos: " << est.atendidos << endl;
     if(est.atendidos > 0){
         cout << "Tiempo medio de atencion: " << (double)est.sumaRetorno / est.atendidos << endl;
         cout << "Tiempo medio de respuesta: " << (double)est.sumaRespuesta / est.atendidos << endl;
     }
+    */
+    delete memoria; // libera la memoria asignada al objeto de memoria
     return 0;
 }
-

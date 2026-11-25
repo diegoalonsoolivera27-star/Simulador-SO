@@ -47,7 +47,7 @@ inline int pedirEntero(int min, int max, bool mostrarRango){
 
 inline config leerConfig(){
     config c;
-    int mb, opc = 0;
+    int mb, opc = 0, cproc;
     do{
         cout << "Memoria en MB (1, 4, 8): ";
         mb = pedirEntero(1, 8, false);
@@ -57,9 +57,16 @@ inline config leerConfig(){
     cout << "Tamaño máximo de procesos (KB) ";
     c.tamMaxPro = pedirEntero(1, c.memoriaTotal, true);
 
-    cout << "Cuanto máximo por proceso ";
-    c.cuantoMaxPro = pedirEntero(1, 100, true);
-
+    cout << "Cuanto máximo por proceso (positivo): ";
+    do {
+        cin >> cproc;
+        if (cproc < 1){
+            cout << "Valor inválido, intente de nuevo: ";
+        } else {
+            c.cuantoMaxPro = cproc;
+        }
+    } while (cproc < 1);
+    
     cout << "Cuanto del sistema ";
     c.cuantoSistema = pedirEntero(1, c.cuantoMaxPro, true);
 
