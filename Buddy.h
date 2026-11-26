@@ -31,7 +31,7 @@ class Buddy : public Memoria{
 
         int libreTotal() const override{
             int total = 0;
-            for (int i = 0; i < ordenMax; i++){
+            for (int i = 0; i <= ordenMax; i++){
                 total += libres[i].size() * (1 << i); // cuantos KB libres hay en total
             }
             return total;
@@ -85,21 +85,21 @@ class Buddy : public Memoria{
             map<int, string> bloques; // dirección / texto - pero se ordenan por dirección
 
             for (const auto& par : ocupados) {
-                const Bloque& b = par.second;
-                bloques[b.dir] = pts(b.p);
-                int frag = b.tam - b.p.tamano;
-                if (frag > 0)
-                    bloques[b.dir + b.p.tamano] = "[h," + to_string(frag) + ",0]";
+                bloques[par.second.dir] = pts(par.second.p);
             }
             
-            for (int i=0; i<ordenMax; i++){ // bloques libres: [0, tamaño del bloque, 0]
+            for (int i=0; i <= ordenMax; i++){ // bloques libres: [0, tamaño del bloque, 0]
                 for (int dir : libres[i]){
                     bloques[dir] = "[0," + to_string(1 << i) + ",0]";   
                 }
             }
+
+            int mitad = 1 <<(ordenMax - 1);
             
             string s;
             for (const auto &par : bloques){
+                if (par.first == mitad)
+                    s += " |  ";
                 s += par.second + " ";            
             }
             return s;    
