@@ -85,7 +85,12 @@ class Buddy : public Memoria{
             map<int, string> bloques; // dirección / texto - pero se ordenan por dirección
 
             for (const auto& par : ocupados) {
-                bloques[par.second.dir] = pts(par.second.p);
+                    const Bloque& b = par.second;
+                    int frag = b.tam - b.p.tamano; // espacio que sobra dentro del bloque
+                    string t = pts(b.p);
+                    if (frag > 0) // solo si realmente sobra espacio
+                        t = "[" + t + " " + to_string(b.tam) + "]";
+                    bloques[b.dir] = t;
             }
             
             for (int i=0; i <= ordenMax; i++){ // bloques libres: [0, tamaño del bloque, 0]
